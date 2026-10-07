@@ -11,16 +11,16 @@
 
 <body>
 
-    <!-- 이름 입력 -->
-    <section id="loginScreen" class="screen">
+    <div id="loginScreen" class="screen">
+
         <div class="login-box">
 
-            <div class="logo">QuickChat</div>
+            <h1>QuickChat</h1>
 
-            <div class="description">
+            <p>
                 이름만 입력하고<br>
                 바로 대화하세요.
-            </div>
+            </p>
 
             <input
                 id="nameInput"
@@ -34,35 +34,32 @@
                 입장하기
             </button>
 
-            <div id="status" class="status">
-                연결 준비 중...
+            <div id="status">
+                준비 중...
             </div>
 
         </div>
-    </section>
+
+    </div>
 
 
-    <!-- 채팅 -->
-    <section id="chatScreen" class="chat-screen hidden">
+    <div id="chatScreen" class="chat-screen hidden">
 
-        <header class="topbar">
+        <header>
 
-            <div class="title">
-                QuickChat
-            </div>
+            <strong>QuickChat</strong>
 
-            <div class="online">
-                ● <span id="onlineCount">1</span>
-            </div>
+            <span id="onlineCount">
+                연결 중...
+            </span>
 
         </header>
 
 
-        <main id="messages" class="messages">
-        </main>
+        <main id="messages"></main>
 
 
-        <form id="messageForm" class="input-area">
+        <form id="messageForm">
 
             <input
                 id="messageInput"
@@ -78,13 +75,10 @@
 
         </form>
 
-    </section>
+    </div>
 
 
-    <!-- PeerJS -->
-    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
-
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 
 </body>
 </html>
