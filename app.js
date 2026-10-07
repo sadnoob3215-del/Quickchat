@@ -21,6 +21,7 @@ import {
 const firebaseConfig = {
   apiKey: "AIzaSyCKLoiguWM3dFiONfFJmqEpnF3FqqQqNy4",
   authDomain: "quickchat-41dfe.firebaseapp.com",
+  databaseURL: "https://quickchat-41dfe-default-rtdb.firebaseio.com",
   projectId: "quickchat-41dfe",
   storageBucket: "quickchat-41dfe.firebasestorage.app",
   messagingSenderId: "359008206347",
