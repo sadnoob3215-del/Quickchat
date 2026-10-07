@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>QuickChat</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- 이름 입력 -->
+    <section id="loginScreen" class="screen">
+        <div class="login-box">
+
+            <div class="logo">QuickChat</div>
+
+            <div class="description">
+                이름만 입력하고<br>
+                바로 대화하세요.
+            </div>
+
+            <input
+                id="nameInput"
+                type="text"
+                maxlength="20"
+                placeholder="이름"
+                autocomplete="off"
+            >
+
+            <button id="joinButton">
+                입장하기
+            </button>
+
+            <div id="status" class="status">
+                연결 준비 중...
+            </div>
+
+        </div>
+    </section>
+
+
+    <!-- 채팅 -->
+    <section id="chatScreen" class="chat-screen hidden">
+
+        <header class="topbar">
+
+            <div class="title">
+                QuickChat
+            </div>
+
+            <div class="online">
+                ● <span id="onlineCount">1</span>
+            </div>
+
+        </header>
+
+
+        <main id="messages" class="messages">
+        </main>
+
+
+        <form id="messageForm" class="input-area">
+
+            <input
+                id="messageInput"
+                type="text"
+                maxlength="500"
+                placeholder="메시지를 입력하세요..."
+                autocomplete="off"
+            >
+
+            <button type="submit">
+                ➤
+            </button>
+
+        </form>
+
+    </section>
+
+
+    <!-- PeerJS -->
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.5/dist/peerjs.min.js"></script>
+
+    <script src="app.js"></script>
+
+</body>
+</html>
