@@ -1,451 +1,107 @@
-/*
-    QuickChat
-    GitHub Pages용 초간단 P2P 채팅
+import {
+    initializeApp
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 
-    서버 / DB 없음
+import {
+    getDatabase,
+    ref,
+    push,
+    onChildAdded,
+    onValue,
+    onDisconnect,
+    set,
+    remove
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
+
+
+/* =====================================
+   Firebase 설정
+===================================== */
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCKLoiguWM3dFiONfFJmqEpnF3FqqQqNy4",
+  authDomain: "quickchat-41dfe.firebaseapp.com",
+  projectId: "quickchat-41dfe",
+  storageBucket: "quickchat-41dfe.firebasestorage.app",
+  messagingSenderId: "359008206347",
+  appId: "1:359008206347:web:c5e9c925928d47b857d10e",
+  measurementId: "G-3F3K5DCPEV"
+};
+
+
+const app = initializeApp(firebaseConfig);
+
+const db = getDatabase(app);
+
+
+/* =====================================
+   기본 설정
+===================================== */
+
+/*
+    같은 GitHub Pages 주소 = 같은 채팅방
+
+    예:
+    https://example.github.io/QuickChat/
+
+    이 주소에 들어온 사람들은
+    모두 같은 방을 사용한다.
 */
 
+const roomId = "main-room";
 
-let peer = null;
+const roomRef = ref(
+    db,
+    "rooms/" + roomId
+);
 
-let connections = [];
+
+/* =====================================
+   화면
+===================================== */
+
+const loginScreen =
+    document.getElementById("loginScreen");
+
+const chatScreen =
+    document.getElementById("chatScreen");
+
+const nameInput =
+    document.getElementById("nameInput");
+
+const joinButton =
+    document.getElementById("joinButton");
+
+const status =
+    document.getElementById("status");
+
+const messages =
+    document.getElementById("messages");
+
+const messageForm =
+    document.getElementById("messageForm");
+
+const messageInput =
+    document.getElementById("messageInput");
+
+const onlineCount =
+    document.getElementById("onlineCount");
+
 
 let myName = "";
 
-let isHost = false;
+let myUserId = "";
 
-let hostConnection = null;
 
-let messageHistory = [];
-
-
-// 화면
-const loginScreen = document.getElementById("loginScreen");
-const chatScreen = document.getElementById("chatScreen");
-
-const nameInput = document.getElementById("nameInput");
-const joinButton = document.getElementById("joinButton");
-
-const statusText = document.getElementById("status");
-
-const messages = document.getElementById("messages");
-
-const messageForm = document.getElementById("messageForm");
-const messageInput = document.getElementById("messageInput");
-
-const onlineCount = document.getElementById("onlineCount");
-
-
-// ========================================
-// 채팅방 ID
-// ========================================
-
-function makeRoomId() {
-
-    const text =
-        location.hostname +
-        location.pathname;
-
-    let hash = 0;
-
-    for (let i = 0; i < text.length; i++) {
-
-        hash =
-            ((hash << 5) - hash) +
-            text.charCodeAt(i);
-
-        hash |= 0;
-    }
-
-    hash = Math.abs(hash);
-
-    return "quickchat-" + hash;
-}
-
-const ROOM_ID = makeRoomId();
-
-
-// ========================================
-// Peer 시작
-// ========================================
-
-function createPeer() {
-
-    statusText.textContent = "채팅방에 연결 중...";
-
-    peer = new Peer(ROOM_ID);
-
-    peer.on("open", () => {
-
-        /*
-            방 ID를 먼저 차지했다면
-            내가 현재 방의 호스트
-        */
-
-        isHost = true;
-
-        statusText.textContent =
-            "채팅방을 만들었습니다.";
-
-    });
-
-
-    /*
-        이미 방이 존재하면
-        ID 충돌 발생
-
-        → 기존 방에 참가
-    */
-
-    peer.on("error", (error) => {
-
-        if (error.type === "unavailable-id") {
-
-            isHost = false;
-
-            peer.destroy();
-
-            connectToHost();
-
-            return;
-        }
-
-        console.error(error);
-
-        statusText.textContent =
-            "연결에 실패했습니다.";
-    });
-
-
-    /*
-        다른 사용자가 나에게 연결
-        → 내가 호스트
-    */
-
-    peer.on("connection", (connection) => {
-
-        if (!isHost) return;
-
-        setupHostConnection(connection);
-
-    });
-}
-
-
-// ========================================
-// 기존 방 참가
-// ========================================
-
-function connectToHost() {
-
-    statusText.textContent =
-        "기존 채팅방에 참가 중...";
-
-    peer = new Peer();
-
-    peer.on("open", () => {
-
-        hostConnection =
-            peer.connect(ROOM_ID);
-
-        setupClientConnection(hostConnection);
-
-    });
-
-
-    peer.on("error", (error) => {
-
-        console.error(error);
-
-        statusText.textContent =
-            "채팅방에 연결할 수 없습니다.";
-    });
-}
-
-
-// ========================================
-// 호스트 연결
-// ========================================
-
-function setupHostConnection(connection) {
-
-    connections.push(connection);
-
-    connection.on("open", () => {
-
-        /*
-            새로 들어온 사람에게
-            기존 채팅 기록 전달
-        */
-
-        connection.send({
-            type: "history",
-            messages: messageHistory
-        });
-
-
-        /*
-            현재 접속자 수
-        */
-
-        broadcastCount();
-
-    });
-
-
-    connection.on("data", (data) => {
-
-        if (!data) return;
-
-
-        if (data.type === "join") {
-
-            addSystemMessage(
-                `${data.name}님이 입장했습니다.`
-            );
-
-            broadcast({
-                type: "system",
-                text: `${data.name}님이 입장했습니다.`
-            });
-
-            return;
-        }
-
-
-        if (data.type === "message") {
-
-            const message = {
-                name: data.name,
-                text: data.text
-            };
-
-            /*
-                호스트에도 저장
-            */
-
-            messageHistory.push(message);
-
-
-            /*
-                화면 표시
-            */
-
-            displayMessage(
-                message.name,
-                message.text
-            );
-
-
-            /*
-                다른 사람들에게 전달
-            */
-
-            broadcast({
-                type: "message",
-                name: message.name,
-                text: message.text
-            });
-
-        }
-
-    });
-
-
-    connection.on("close", () => {
-
-        connections =
-            connections.filter(
-                c => c !== connection
-            );
-
-        broadcastCount();
-
-    });
-
-}
-
-
-// ========================================
-// 일반 참가자
-// ========================================
-
-function setupClientConnection(connection) {
-
-    connection.on("open", () => {
-
-        statusText.textContent =
-            "채팅방에 연결되었습니다.";
-
-        /*
-            이름 전달
-        */
-
-        connection.send({
-            type: "join",
-            name: myName
-        });
-
-        enterChat();
-
-    });
-
-
-    connection.on("data", (data) => {
-
-        if (!data) return;
-
-
-        /*
-            기존 기록
-        */
-
-        if (data.type === "history") {
-
-            data.messages.forEach(message => {
-
-                displayMessage(
-                    message.name,
-                    message.text
-                );
-
-            });
-
-            return;
-        }
-
-
-        /*
-            새 메시지
-        */
-
-        if (data.type === "message") {
-
-            displayMessage(
-                data.name,
-                data.text
-            );
-
-            return;
-        }
-
-
-        /*
-            시스템 메시지
-        */
-
-        if (data.type === "system") {
-
-            addSystemMessage(
-                data.text
-            );
-
-        }
-
-    });
-
-
-    connection.on("close", () => {
-
-        addSystemMessage(
-            "채팅방 연결이 종료되었습니다."
-        );
-
-    });
-
-}
-
-
-// ========================================
-// 메시지 전체 전송
-// ========================================
-
-function broadcast(data) {
-
-    connections.forEach(connection => {
-
-        if (connection.open) {
-
-            connection.send(data);
-
-        }
-
-    });
-
-}
-
-
-// ========================================
-// 접속자 수
-// ========================================
-
-function broadcastCount() {
-
-    const count =
-        connections.length + 1;
-
-    onlineCount.textContent = count;
-
-    broadcast({
-        type: "count",
-        count
-    });
-
-}
-
-
-// ========================================
-// 채팅 입장
-// ========================================
-
-function enterChat() {
-
-    loginScreen.classList.add("hidden");
-
-    chatScreen.classList.remove("hidden");
-
-    messageInput.focus();
-
-}
-
-
-// ========================================
-// 이름 입력
-// ========================================
-
-function joinChat() {
-
-    const name =
-        nameInput.value.trim();
-
-    if (!name) {
-
-        alert("이름을 입력해주세요.");
-
-        nameInput.focus();
-
-        return;
-    }
-
-    myName =
-        name.substring(0, 20);
-
-    joinButton.disabled = true;
-
-    createPeer();
-
-}
-
-
-// 버튼
+/* =====================================
+   입장
+===================================== */
 
 joinButton.addEventListener(
     "click",
     joinChat
 );
 
-
-// 엔터
 
 nameInput.addEventListener(
     "keydown",
@@ -461,81 +117,258 @@ nameInput.addEventListener(
 );
 
 
-// ========================================
-// 메시지 보내기
-// ========================================
+async function joinChat() {
+
+    const name =
+        nameInput.value.trim();
+
+    if (!name) {
+
+        alert("이름을 입력해주세요.");
+
+        return;
+    }
+
+
+    myName =
+        name.substring(0, 20);
+
+
+    joinButton.disabled = true;
+
+    status.textContent =
+        "입장 중...";
+
+
+    try {
+
+        /*
+            Firebase가 사용자용
+            고유 ID 생성
+        */
+
+        const usersRef =
+            ref(db, `rooms/${roomId}/users`);
+
+        const userRef =
+            push(usersRef);
+
+        myUserId =
+            userRef.key;
+
+
+        /*
+            사용자 등록
+        */
+
+        await set(
+            userRef,
+            {
+                name: myName
+            }
+        );
+
+
+        /*
+            나가면 자동 삭제
+        */
+
+        onDisconnect(userRef)
+            .remove();
+
+
+        /*
+            채팅 화면
+        */
+
+        loginScreen.classList.add(
+            "hidden"
+        );
+
+        chatScreen.classList.remove(
+            "hidden"
+        );
+
+
+        messageInput.focus();
+
+
+        /*
+            메시지 감시
+        */
+
+        startMessageListener();
+
+
+        /*
+            접속자 감시
+        */
+
+        startUserListener();
+
+
+        status.textContent =
+            "입장 완료";
+
+    }
+
+    catch (error) {
+
+        console.error(error);
+
+        alert(
+            "채팅방에 연결하지 못했습니다.\n" +
+            error.message
+        );
+
+        joinButton.disabled = false;
+
+        status.textContent =
+            "연결 실패";
+
+    }
+
+}
+
+
+/* =====================================
+   메시지 수신
+===================================== */
+
+function startMessageListener() {
+
+    const messagesRef =
+        ref(
+            db,
+            `rooms/${roomId}/messages`
+        );
+
+
+    onChildAdded(
+        messagesRef,
+        snapshot => {
+
+            const data =
+                snapshot.val();
+
+            if (!data) return;
+
+
+            displayMessage(
+                data.name,
+                data.text
+            );
+
+        }
+    );
+
+}
+
+
+/* =====================================
+   사용자 수
+===================================== */
+
+function startUserListener() {
+
+    const usersRef =
+        ref(
+            db,
+            `rooms/${roomId}/users`
+        );
+
+
+    onValue(
+        usersRef,
+        snapshot => {
+
+            const users =
+                snapshot.val() || {};
+
+            const count =
+                Object.keys(users).length;
+
+
+            onlineCount.textContent =
+                `${count}명 접속 중`;
+
+        }
+    );
+
+}
+
+
+/* =====================================
+   메시지 전송
+===================================== */
 
 messageForm.addEventListener(
     "submit",
-    event => {
+    async event => {
 
         event.preventDefault();
+
 
         const text =
             messageInput.value.trim();
 
+
         if (!text) return;
 
-        const message = {
-            type: "message",
-            name: myName,
-            text: text.substring(0, 500)
-        };
+
+        try {
+
+            const messagesRef =
+                ref(
+                    db,
+                    `rooms/${roomId}/messages`
+                );
 
 
-        /*
-            내가 호스트
-        */
+            await push(
+                messagesRef,
+                {
+                    name: myName,
+                    text: text.substring(0, 500),
 
-        if (isHost) {
-
-            messageHistory.push({
-                name: myName,
-                text: message.text
-            });
-
-
-            displayMessage(
-                myName,
-                message.text
+                    time:
+                        Date.now()
+                }
             );
 
 
-            broadcast(message);
+            messageInput.value = "";
+
+            messageInput.focus();
 
         }
 
+        catch (error) {
 
-        /*
-            내가 참가자
-        */
+            console.error(error);
 
-        else if (
-            hostConnection &&
-            hostConnection.open
-        ) {
-
-            hostConnection.send(message);
+            alert(
+                "메시지를 보내지 못했습니다."
+            );
 
         }
-
-
-        messageInput.value = "";
-
-        messageInput.focus();
 
     }
 );
 
 
-// ========================================
-// 메시지 화면 표시
-// ========================================
+/* =====================================
+   메시지 화면
+===================================== */
 
-function displayMessage(name, text) {
+function displayMessage(
+    name,
+    text
+) {
 
     const element =
         document.createElement("div");
+
 
     element.className =
         "message";
@@ -543,7 +376,9 @@ function displayMessage(name, text) {
 
     if (name === myName) {
 
-        element.classList.add("mine");
+        element.classList.add(
+            "mine"
+        );
 
     }
 
@@ -565,8 +400,8 @@ function displayMessage(name, text) {
         "message-text";
 
     /*
-        innerHTML이 아니라 textContent 사용
-        → HTML 코드가 실행되지 않음
+        textContent를 사용해서
+        HTML 코드가 실행되지 않도록 함
     */
 
     textElement.textContent =
@@ -581,45 +416,11 @@ function displayMessage(name, text) {
         textElement
     );
 
-    messages.appendChild(
-        element
-    );
-
-
-    scrollBottom();
-
-}
-
-
-// ========================================
-// 시스템 메시지
-// ========================================
-
-function addSystemMessage(text) {
-
-    const element =
-        document.createElement("div");
-
-    element.className =
-        "system-message";
-
-    element.textContent =
-        text;
 
     messages.appendChild(
         element
     );
 
-    scrollBottom();
-
-}
-
-
-// ========================================
-// 스크롤
-// ========================================
-
-function scrollBottom() {
 
     messages.scrollTop =
         messages.scrollHeight;
