@@ -4,31 +4,53 @@
     padding: 0;
 }
 
+
 body {
+
     font-family:
         Arial,
         "Noto Sans KR",
         sans-serif;
 
     background: #f4f5f7;
+
     color: #222;
+
+    overflow: hidden;
 }
 
 
-/* 로그인 */
+/* =====================================
+   공통
+===================================== */
+
+.hidden {
+    display: none !important;
+}
+
 
 .screen {
+
     width: 100vw;
     height: 100vh;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 }
 
+
+/* =====================================
+   로그인
+===================================== */
+
 .login-box {
+
     width: 360px;
-    max-width: calc(100% - 40px);
+
+    max-width:
+        calc(100% - 40px);
 
     background: white;
 
@@ -39,31 +61,59 @@ body {
     text-align: center;
 
     box-shadow:
-        0 12px 40px rgba(0, 0, 0, 0.08);
+        0 12px 40px
+        rgba(0, 0, 0, 0.08);
 }
 
+
+.logo {
+
+    width: 90px;
+    height: 90px;
+
+    object-fit: contain;
+
+    margin-bottom: 10px;
+}
+
+
 .login-box h1 {
+
     font-size: 30px;
+
     margin-bottom: 12px;
 }
 
+
 .login-box p {
+
     color: #888;
 
     font-size: 14px;
+
     line-height: 1.6;
 
     margin-bottom: 25px;
 }
 
+
+/* =====================================
+   이름 입력
+===================================== */
+
 #nameInput {
+
     width: 100%;
+
     height: 48px;
 
-    border: 1px solid #ddd;
+    border:
+        1px solid #ddd;
+
     border-radius: 10px;
 
-    padding: 0 14px;
+    padding:
+        0 14px;
 
     outline: none;
 
@@ -72,18 +122,29 @@ body {
     margin-bottom: 10px;
 }
 
+
 #nameInput:focus {
+
     border-color: #888;
 }
 
+
+/* =====================================
+   입장 버튼
+===================================== */
+
 #joinButton {
+
     width: 100%;
+
     height: 48px;
 
     border: none;
+
     border-radius: 10px;
 
     background: #222;
+
     color: white;
 
     font-size: 15px;
@@ -91,15 +152,27 @@ body {
     cursor: pointer;
 }
 
+
 #joinButton:hover {
+
     background: #333;
 }
 
+
 #joinButton:disabled {
+
     opacity: 0.5;
+
+    cursor: default;
 }
 
+
+/* =====================================
+   상태
+===================================== */
+
 #status {
+
     margin-top: 15px;
 
     color: #999;
@@ -108,50 +181,88 @@ body {
 }
 
 
-/* 채팅 */
+/* =====================================
+   채팅 전체
+===================================== */
 
 .chat-screen {
+
     width: 100vw;
+
     height: 100vh;
 
     display: flex;
+
     flex-direction: column;
 }
 
-.hidden {
-    display: none !important;
-}
 
+/* =====================================
+   상단 헤더
+===================================== */
 
 header {
+
     height: 60px;
 
     flex-shrink: 0;
 
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
 
-    padding: 0 20px;
+    padding:
+        0 20px;
 
     background: white;
 
-    border-bottom: 1px solid #ddd;
+    border-bottom:
+        1px solid #ddd;
 }
 
+
+.header-left {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 10px;
+}
+
+
+.header-logo {
+
+    width: 34px;
+
+    height: 34px;
+
+    object-fit: contain;
+}
+
+
 header strong {
+
     font-size: 18px;
 }
 
+
 #onlineCount {
+
     font-size: 12px;
+
     color: #777;
 }
 
 
-/* 메시지 */
+/* =====================================
+   메시지 영역
+===================================== */
 
 #messages {
+
     flex: 1;
 
     overflow-y: auto;
@@ -159,33 +270,48 @@ header strong {
     padding: 20px;
 
     display: flex;
+
     flex-direction: column;
 
     gap: 10px;
 }
 
+
+/* =====================================
+   메시지
+===================================== */
+
 .message {
+
     width: fit-content;
+
     max-width: 70%;
 
     background: white;
 
-    padding: 10px 13px;
+    padding:
+        10px 13px;
 
     border-radius: 12px;
 
     box-shadow:
-        0 2px 6px rgba(0, 0, 0, 0.04);
+        0 2px 6px
+        rgba(0, 0, 0, 0.04);
 }
 
+
 .message.mine {
+
     align-self: flex-end;
 
     background: #222;
+
     color: white;
 }
 
+
 .message-name {
+
     color: #888;
 
     font-size: 12px;
@@ -193,11 +319,15 @@ header strong {
     margin-bottom: 4px;
 }
 
+
 .message.mine .message-name {
+
     color: #aaa;
 }
 
+
 .message-text {
+
     font-size: 15px;
 
     line-height: 1.45;
@@ -207,20 +337,13 @@ header strong {
     word-break: break-word;
 }
 
-.system {
-    text-align: center;
 
-    color: #999;
-
-    font-size: 12px;
-
-    margin: 5px 0;
-}
-
-
-/* 입력 */
+/* =====================================
+   메시지 입력
+===================================== */
 
 #messageForm {
+
     display: flex;
 
     gap: 8px;
@@ -229,36 +352,49 @@ header strong {
 
     background: white;
 
-    border-top: 1px solid #ddd;
+    border-top:
+        1px solid #ddd;
 }
 
+
 #messageInput {
+
     flex: 1;
 
     height: 46px;
 
-    border: 1px solid #ddd;
+    border:
+        1px solid #ddd;
+
     border-radius: 10px;
 
-    padding: 0 14px;
+    padding:
+        0 14px;
 
     outline: none;
 
     font-size: 15px;
 }
 
+
 #messageInput:focus {
+
     border-color: #888;
 }
 
+
 #messageForm button {
+
     width: 46px;
+
     height: 46px;
 
     border: none;
+
     border-radius: 10px;
 
     background: #222;
+
     color: white;
 
     font-size: 18px;
@@ -267,19 +403,34 @@ header strong {
 }
 
 
-/* 모바일 */
+#messageForm button:hover {
+
+    background: #333;
+}
+
+
+/* =====================================
+   모바일
+===================================== */
 
 @media (max-width: 600px) {
 
     .login-box {
-        padding: 35px 25px;
+
+        padding:
+            35px 25px;
     }
+
 
     #messages {
-        padding: 12px;
+
+        padding:
+            12px;
     }
 
+
     .message {
+
         max-width: 85%;
     }
 
