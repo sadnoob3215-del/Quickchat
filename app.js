@@ -3,14 +3,18 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 
 import {
+    getAuth,
+    signInAnonymously
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+import {
     getDatabase,
     ref,
     push,
     onChildAdded,
     onValue,
     onDisconnect,
-    set,
-    remove
+    set
 } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js";
 
 
@@ -21,7 +25,6 @@ import {
 const firebaseConfig = {
   apiKey: "AIzaSyCKLoiguWM3dFiONfFJmqEpnF3FqqQqNy4",
   authDomain: "quickchat-41dfe.firebaseapp.com",
-  databaseURL: "https://quickchat-41dfe-default-rtdb.firebaseio.com",
   projectId: "quickchat-41dfe",
   storageBucket: "quickchat-41dfe.firebasestorage.app",
   messagingSenderId: "359008206347",
@@ -30,72 +33,97 @@ const firebaseConfig = {
 };
 
 
-const app = initializeApp(firebaseConfig);
+const app =
+    initializeApp(firebaseConfig);
 
-const db = getDatabase(app);
+
+const auth =
+    getAuth(app);
+
+
+const db =
+    getDatabase(app);
 
 
 /* =====================================
    기본 설정
 ===================================== */
 
-/*
-    같은 GitHub Pages 주소 = 같은 채팅방
-
-    예:
-    https://example.github.io/QuickChat/
-
-    이 주소에 들어온 사람들은
-    모두 같은 방을 사용한다.
-*/
-
-const roomId = "main-room";
-
-const roomRef = ref(
-    db,
-    "rooms/" + roomId
-);
+const roomId =
+    "main-room";
 
 
 /* =====================================
-   화면
+   화면 요소
 ===================================== */
 
 const loginScreen =
-    document.getElementById("loginScreen");
+    document.getElementById(
+        "loginScreen"
+    );
+
 
 const chatScreen =
-    document.getElementById("chatScreen");
+    document.getElementById(
+        "chatScreen"
+    );
+
 
 const nameInput =
-    document.getElementById("nameInput");
+    document.getElementById(
+        "nameInput"
+    );
+
 
 const joinButton =
-    document.getElementById("joinButton");
+    document.getElementById(
+        "joinButton"
+    );
+
 
 const status =
-    document.getElementById("status");
+    document.getElementById(
+        "status"
+    );
+
 
 const messages =
-    document.getElementById("messages");
+    document.getElementById(
+        "messages"
+    );
+
 
 const messageForm =
-    document.getElementById("messageForm");
+    document.getElementById(
+        "messageForm"
+    );
+
 
 const messageInput =
-    document.getElementById("messageInput");
+    document.getElementById(
+        "messageInput"
+    );
+
 
 const onlineCount =
-    document.getElementById("onlineCount");
+    document.getElementById(
+        "onlineCount"
+    );
 
+
+/* =====================================
+   사용자 정보
+===================================== */
 
 let myName = "";
 
 let myUserId = "";
 
+let joined = false;
+
 
 /* =====================================
-   입장
+   입장 버튼
 ===================================== */
 
 joinButton.addEventListener(
@@ -118,73 +146,113 @@ nameInput.addEventListener(
 );
 
 
+/* =====================================
+   채팅 입장
+===================================== */
+
 async function joinChat() {
+
+    if (joined) {
+
+        return;
+
+    }
+
 
     const name =
         nameInput.value.trim();
 
+
     if (!name) {
 
-        alert("이름을 입력해주세요.");
+        alert(
+            "이름을 입력해주세요."
+        );
 
         return;
+
     }
 
 
     myName =
-        name.substring(0, 20);
+        name.substring(
+            0,
+            20
+        );
 
 
-    joinButton.disabled = true;
+    joinButton.disabled =
+        true;
+
 
     status.textContent =
-        "입장 중...";
+        "보안 연결 중...";
 
 
     try {
 
-        /*
-            Firebase가 사용자용
-            고유 ID 생성
-        */
+        /* -----------------------------
+           Firebase 익명 로그인
+        ----------------------------- */
 
-        const usersRef =
-            ref(db, `rooms/${roomId}/users`);
+        const userCredential =
+            await signInAnonymously(
+                auth
+            );
 
-        const userRef =
-            push(usersRef);
+
+        const user =
+            userCredential.user;
+
 
         myUserId =
-            userRef.key;
+            user.uid;
 
 
-        /*
-            사용자 등록
-        */
+        /* -----------------------------
+           사용자 등록
+        ----------------------------- */
+
+        const userRef =
+            ref(
+                db,
+                `rooms/${roomId}/users/${myUserId}`
+            );
+
 
         await set(
             userRef,
             {
-                name: myName
+                name:
+                    myName,
+
+                joinedAt:
+                    Date.now()
             }
         );
 
 
-        /*
-            나가면 자동 삭제
-        */
+        /* -----------------------------
+           연결 종료 시 자동 삭제
+        ----------------------------- */
 
-        onDisconnect(userRef)
-            .remove();
+        await onDisconnect(
+            userRef
+        ).remove();
 
 
-        /*
-            채팅 화면
-        */
+        /* -----------------------------
+           화면 전환
+        ----------------------------- */
+
+        joined =
+            true;
+
 
         loginScreen.classList.add(
             "hidden"
         );
+
 
         chatScreen.classList.remove(
             "hidden"
@@ -194,35 +262,37 @@ async function joinChat() {
         messageInput.focus();
 
 
-        /*
-            메시지 감시
-        */
+        /* -----------------------------
+           실시간 기능
+        ----------------------------- */
 
         startMessageListener();
-
-
-        /*
-            접속자 감시
-        */
 
         startUserListener();
 
 
         status.textContent =
-            "입장 완료";
+            "연결 완료";
 
     }
 
     catch (error) {
 
-        console.error(error);
+        console.error(
+            "Firebase 오류:",
+            error
+        );
+
 
         alert(
-            "채팅방에 연결하지 못했습니다.\n" +
+            "채팅방에 연결하지 못했습니다.\n\n" +
             error.message
         );
 
-        joinButton.disabled = false;
+
+        joinButton.disabled =
+            false;
+
 
         status.textContent =
             "연결 실패";
@@ -233,7 +303,7 @@ async function joinChat() {
 
 
 /* =====================================
-   메시지 수신
+   메시지 실시간 수신
 ===================================== */
 
 function startMessageListener() {
@@ -252,10 +322,16 @@ function startMessageListener() {
             const data =
                 snapshot.val();
 
-            if (!data) return;
+
+            if (!data) {
+
+                return;
+
+            }
 
 
             displayMessage(
+                data.uid,
                 data.name,
                 data.text
             );
@@ -267,7 +343,7 @@ function startMessageListener() {
 
 
 /* =====================================
-   사용자 수
+   접속자 수
 ===================================== */
 
 function startUserListener() {
@@ -286,8 +362,11 @@ function startUserListener() {
             const users =
                 snapshot.val() || {};
 
+
             const count =
-                Object.keys(users).length;
+                Object.keys(
+                    users
+                ).length;
 
 
             onlineCount.textContent =
@@ -310,11 +389,22 @@ messageForm.addEventListener(
         event.preventDefault();
 
 
+        if (!joined) {
+
+            return;
+
+        }
+
+
         const text =
             messageInput.value.trim();
 
 
-        if (!text) return;
+        if (!text) {
+
+            return;
+
+        }
 
 
         try {
@@ -329,16 +419,29 @@ messageForm.addEventListener(
             await push(
                 messagesRef,
                 {
-                    name: myName,
-                    text: text.substring(0, 500),
+
+                    uid:
+                        myUserId,
+
+                    name:
+                        myName,
+
+                    text:
+                        text.substring(
+                            0,
+                            500
+                        ),
 
                     time:
                         Date.now()
+
                 }
             );
 
 
-            messageInput.value = "";
+            messageInput.value =
+                "";
+
 
             messageInput.focus();
 
@@ -346,7 +449,11 @@ messageForm.addEventListener(
 
         catch (error) {
 
-            console.error(error);
+            console.error(
+                "메시지 전송 오류:",
+                error
+            );
+
 
             alert(
                 "메시지를 보내지 못했습니다."
@@ -359,23 +466,30 @@ messageForm.addEventListener(
 
 
 /* =====================================
-   메시지 화면
+   메시지 표시
 ===================================== */
 
 function displayMessage(
+    uid,
     name,
     text
 ) {
 
     const element =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
 
 
     element.className =
         "message";
 
 
-    if (name === myName) {
+    /* -----------------------------
+       내 메시지
+    ----------------------------- */
+
+    if (uid === myUserId) {
 
         element.classList.add(
             "mine"
@@ -384,34 +498,50 @@ function displayMessage(
     }
 
 
+    /* -----------------------------
+       이름
+    ----------------------------- */
+
     const nameElement =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     nameElement.className =
         "message-name";
+
 
     nameElement.textContent =
         name;
 
 
+    /* -----------------------------
+       내용
+    ----------------------------- */
+
     const textElement =
-        document.createElement("div");
+        document.createElement(
+            "div"
+        );
+
 
     textElement.className =
         "message-text";
 
-    /*
-        textContent를 사용해서
-        HTML 코드가 실행되지 않도록 함
-    */
 
     textElement.textContent =
         text;
 
 
+    /* -----------------------------
+       추가
+    ----------------------------- */
+
     element.appendChild(
         nameElement
     );
+
 
     element.appendChild(
         textElement
@@ -422,6 +552,10 @@ function displayMessage(
         element
     );
 
+
+    /* -----------------------------
+       가장 아래로
+    ----------------------------- */
 
     messages.scrollTop =
         messages.scrollHeight;
