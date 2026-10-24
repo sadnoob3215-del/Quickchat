@@ -1,19 +1,44 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>QuickChat</title>
 
-    <link rel="stylesheet" href="style.css">
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
 </head>
+
 
 <body>
 
-    <div id="loginScreen" class="screen">
+
+    <!-- =========================
+         입장 화면
+    ========================== -->
+
+    <div
+        id="loginScreen"
+        class="screen"
+    >
 
         <div class="login-box">
+
+            <img
+                src="assets/logo.png"
+                class="logo"
+                alt="QuickChat"
+            >
 
             <h1>QuickChat</h1>
 
@@ -21,6 +46,7 @@
                 이름만 입력하고<br>
                 바로 대화하세요.
             </p>
+
 
             <input
                 id="nameInput"
@@ -30,9 +56,11 @@
                 autocomplete="off"
             >
 
+
             <button id="joinButton">
                 입장하기
             </button>
+
 
             <div id="status">
                 준비 중...
@@ -43,11 +71,32 @@
     </div>
 
 
-    <div id="chatScreen" class="chat-screen hidden">
+
+    <!-- =========================
+         채팅 화면
+    ========================== -->
+
+    <div
+        id="chatScreen"
+        class="chat-screen hidden"
+    >
 
         <header>
 
-            <strong>QuickChat</strong>
+            <div class="header-left">
+
+                <img
+                    src="assets/logo.png"
+                    class="header-logo"
+                    alt="QuickChat"
+                >
+
+                <strong>
+                    QuickChat
+                </strong>
+
+            </div>
+
 
             <span id="onlineCount">
                 연결 중...
@@ -69,6 +118,7 @@
                 autocomplete="off"
             >
 
+
             <button type="submit">
                 ➤
             </button>
@@ -78,7 +128,11 @@
     </div>
 
 
-    <script type="module" src="app.js"></script>
+    <script
+        type="module"
+        src="app.js"
+    ></script>
 
 </body>
+
 </html>
